@@ -7,8 +7,11 @@ const bodyPs = require('body-parser'); //import body-paarser
 app.use(bodyPs.urlencoded({ extended: false}));
 app.use(bodyPs.json());
 
-const  mhsRouter = require('./routes/mahasiswa');
-app.use('/api/mhs', mhsRouter);
+const  mhsRoutermhs = require('./routes/mahasiswa');
+app.use('/api/mhs', mhsRoutermhs);
+
+const  mhsRouterJurusan = require('./routes/jurusan');
+app.use('/api/jrs', mhsRouterJurusan);
 
 app.listen(port, () => {
     console.log(`Aplikasi berjalan di http:://localhost:${port}`)
