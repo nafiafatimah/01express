@@ -22,7 +22,11 @@ const fileFilter = (req, file, cb) => {
     // mengecek jenis file
     if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
         cb(null, true); //izinkan file
-    } else {
+    } 
+    else if (file.mimetype === 'application/pdf') {
+        cb(null, true); // izinkan file PDF
+    }
+    else {
         cb(new Error('Jenis File Tidak Di Izinkan'), false); //tplak file
     }
 };
