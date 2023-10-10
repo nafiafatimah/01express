@@ -1,8 +1,10 @@
 const express = require ('express');
 const router = express.Router();
+//IMPORT DATABAASE
 const connection = require('../config/db.js');
+//IMPORT EXPRESS VALIDATOR
 const {body, validationResult } = require('express-validator');
-
+const fs = require('fs')
 const multer = require ('multer') 
 const path = require ('path')
 
@@ -90,10 +92,11 @@ router.get('/(:id)', function (req, res) {
         }
     })
 })
-router.patch('/update/:id', [
+
+router.patch('/update/:id', upload.single("gambar"), [
     body('nama').notEmpty(),
     body('nrp').notEmpty(),
-    body('jurusan').notEmpty()
+    body('id_jurusan').notEmpty()
 ], (req, res) => {
     const error = validationResult(req);
     if(!error.isEmpty()){
@@ -102,25 +105,52 @@ router.patch('/update/:id', [
         });
     }
     let id = req.params.id;
-    let Data = {
-        nama: req.body.nama,
-        nrp: req.body.nrp,
-        id_jurusan: req.body.jurusan
-    }
-    connection.query(`update mahasiswa set ? where id_m = ${id}`, Data, function(err, rows) {
+    //lakukan pengecekan apakah ada file yang di unggah
+    let gambar = req.file ? req.file.filename : null;
+
+    connection.query(`select * from mahasiswa  where id_m = ${id}`, function(err, rows) {
         if(err){
-            return res.req.status(500).json({
+            return res.status(500).json({
                 status: false,
                 message: 'Server Error',
             })
-        }else{
-            return res.status(200).json({
-                status: true,
-                message: 'Update Success...!'
+        }
+        if(rows.length ===0){
+            return res.status(404).json({
+                status: false,
+                message: 'Not Found',
             })
         }
+        const namaFileLama = rows[0].gambar;
+
+        //haus file lama jika ada
+        if(namaFileLama && gambar) {
+            const pathFileLama = path.join(__dirname, '../public/images', namaFileLama);
+            fs.unlinkSync(pathFileLama);
+        }
+
+        let Data = {
+            nama: req.body.nama,
+            nrp: req.body.nrp,
+            id_jurusan: req.body.jurusan,
+            gambar: gambar
+        }
+        connection.query(`update mahasiswa set ? where id_m = ${id}`, Data, function(err, rows) {
+            if(err){
+                return res.status(500).json({
+                    status: false,
+                    message: 'Server Error',
+                })
+            }else{
+                return res.status(200).json({
+                    status: true,
+                    message: 'Update Success...!'
+                })
+            }
+        })
     })
 })
+
 router.delete('/delete/(:id)', function(req, res){
     let id = req.params.id;
     connection.query(`delete from mahasiswa where id_m = ${id}`, function (err, rows){
