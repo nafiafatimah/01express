@@ -17,7 +17,18 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + path.extname(file.originalname) )
     }
 })
-const upload = multer({storage: storage})
+
+const fileFilter = (req, file, cb) => {
+    // mengecek jenis file
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+        cb(null, true); //izinkan file
+    } else {
+        cb(new Error('Jenis File Tidak Di Izinkan'), false); //tplak file
+    }
+};
+const upload = multer({storage: storage, fileFilter: fileFilter})
+
+
 
 router.get('/', function (req, res){
     connection.query('select * from mahasiswa order by id_m desc', function(err, rows){
