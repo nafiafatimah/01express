@@ -1,6 +1,10 @@
 const express = require ('express')
 const app = express()
 const port = 3000
+const cors = require('cors')
+//MEMBUA ROUTE BARU DENGAN GET YANG ISINYA
+app.use(cors())
+
 
 //membuat route baru dengan method GET yang isinya hallo...
 const bodyPs = require('body-parser'); //import body-paarser
