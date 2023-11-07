@@ -32,11 +32,13 @@ const fileFilter = (req, file, cb) => {
 };
 const upload = multer({storage: storage, fileFilter: fileFilter})
 
+const authenticateToken = require('../routes/auth/midleware/authenticateToken')
 
-
-router.get('/', function (req, res){
-    connection.query('select * from mahasiswa order by id_m desc', function(err, rows){
-        if(err){
+router.get('/',authenticateToken, function (req,res){
+    connection.query('SELECT a.id_jurusan, a.id_m AS id, a.nama, a.nrp, b.nama_jurusan as jurusan, a.gambar, a.swa_foto ' +
+    ' from mahasiswa a join jurusan b' +
+    ' on b.id_j=a.id_jurusan ORDER BY a.id_m DESC ', function(err, rows){
+        if (err) {
             return res.status(500).json({
                 status: false,
                 message: 'Server Failed',
@@ -47,45 +49,44 @@ router.get('/', function (req, res){
                 message: 'Data Mahasiswa',
                 data: rows
             })
-        }
-    })
+        }
+    })
 });
 
-router.post('/store', upload.fields([{ name: 'gambar', maxCount: 1 }, { name: 'swa_foto', maxCount: 1 }]),[
+router.post('/store',authenticateToken, upload.fields([{name: 'gambar', maxCount: 1}, {name: 'swa_foto', maxCount: 1}]), [
     //validation
     body('nama').notEmpty(),
     body('nrp').notEmpty(),
     body('id_jurusan').notEmpty()
-],(req, res) => {
-    const error = validationResult(req);
-    if(!error.isEmpty()){
+], (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
         return res.status(422).json({
-            error: error.array()
+            errors: errors.array()
         });
     }
-let Data = {
-    nama: req.body.nama,
-    nrp: req.body.nrp,
-    id_jurusan: req.body.id_jurusan,
-    gambar: req.files.gambar[0].filename,
-    swa_foto: req.files.swa_foto[0].filename
-
-}
-connection.query('insert into mahasiswa set ?', Data, function(err, rows){
-    if(err){
-        return res.status(500).json({
-            status: false,
-            message: 'Server Error',
-        })
-    }else{
-        return res.status(201).json({
-            status:true,
-            message: 'Succes..!',
-            data: rows[0]
-        })
-    }
-})
-})
+    let Data = {
+        nama: req.body.nama,
+        nrp: req.body.nrp,
+        id_jurusan: req.body.id_jurusan,
+        gambar: req.files.gambar[0].filename,
+        swa_foto: req.files.swa_foto[0].filename
+    }
+    connection.query('INSERT INTO mahasiswa SET ?', Data, function (err, result) {
+        if (err) {
+            return res.status(500).json({
+                status: false,
+                message: 'Server Error',
+            });
+        } else {
+            return res.status(201).json({
+                status: true,
+                message: 'Data Mahasiswa berhasil ditambahkan',
+                insertedId: result.insertId
+            });
+        }
+    });
+});
 
 router.get('/(:id)', function (req, res) {
     let id = req.params.id;
@@ -112,7 +113,7 @@ router.get('/(:id)', function (req, res) {
     })
 })
 
-router.patch('/update/:id', upload.fields([{ name: 'gambar', maxCount: 1 }, { name: 'swa_foto', maxCount: 1 }]) , [
+router.patch('/update/:id',authenticateToken, upload.fields([{ name: 'gambar', maxCount: 1 }, { name: 'swa_foto', maxCount: 1 }]) , [
     body('nama').notEmpty(),
     body('nrp').notEmpty(),
     body('id_jurusan').notEmpty()
@@ -157,10 +158,15 @@ router.patch('/update/:id', upload.fields([{ name: 'gambar', maxCount: 1 }, { na
             let Data = {
                 nama: req.body.nama,
                 nrp: req.body.nrp,
-                id_jurusan: req.body.id_jurusan,
-                gambar: gambar,
-                swa_foto: swa_foto
+                id_jurusan: req.body.id_jurusan
             };
+
+            if(gambar) {
+                Data.gambar = gambar;
+            }
+            if(swa_foto) {
+                Data.swa_foto = swa_foto;
+            }
             connection.query(`update mahasiswa SET ? WHERE id_m = ${id}`, Data, function (err, rows) {
                 if (err) {
                     return res.status(500).json({
@@ -177,7 +183,7 @@ router.patch('/update/:id', upload.fields([{ name: 'gambar', maxCount: 1 }, { na
         })
 })
 
-router.delete('/delete/(:id)', function(req, res){
+router.delete('/delete/(:id)',authenticateToken, function(req, res){
         let id = req.params.id;
 
         connection.query(`select * from mahasiswa where id_m = ${id}`, function (err, rows) {
@@ -219,25 +225,6 @@ router.delete('/delete/(:id)', function(req, res){
                 })
             }
         })
-    })
-})
-
-router.get('/', function (req, res){
-    connection.query('selcet a.nama, b.nama_jurusan as jurusan ' +
-    ' from mahasiswa a join jurusan b ' +
-    ' on b.id_j=a.id_jurusan order by a.id_m desc ', function(err, rows){
-        if(err){
-            return res.status(500).json({
-                status: false,
-                message: 'Server Failed',
-            })
-        }else{
-            return res.status(200),json({
-                status: true,
-                message: 'Data Mahasiswa',
-                data: rows
-            })
-        }
     })
 })
 

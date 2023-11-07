@@ -2,8 +2,10 @@ const express = require ('express')
 const app = express()
 const port = 3000
 const cors = require('cors')
-//MEMBUA ROUTE BARU DENGAN GET YANG ISINYA
+//MEMBUA ROUTE BARU DENGAN 
 app.use(cors())
+const path = require('path')
+app.use('/static', express.static(path.join(__dirname, 'public/images')))
 
 
 //membuat route baru dengan method GET yang isinya hallo...
@@ -21,3 +23,7 @@ app.listen(port, () => {
     console.log(`Aplikasi berjalan di http:://localhost:${port}`)
 })
 
+
+//import rute register dan login
+const auth = require('./routes/auth/auth');
+app.use('/api/auth',auth);
